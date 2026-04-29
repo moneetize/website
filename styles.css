@@ -109,6 +109,46 @@ a {
   font-size: 22px;
 }
 
+.mobile-menu-toggle {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.54);
+  color: currentColor;
+  cursor: pointer;
+  padding: 0;
+}
+
+.mobile-menu-toggle span {
+  display: block;
+  width: 20px;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+  transition: transform 260ms ease, opacity 260ms ease;
+}
+
+.mobile-menu-toggle span + span {
+  margin-top: 5px;
+}
+
+.nav-shell.is-menu-open .mobile-menu-toggle span:nth-child(1) {
+  transform: translateY(7px) rotate(45deg);
+}
+
+.nav-shell.is-menu-open .mobile-menu-toggle span:nth-child(2) {
+  opacity: 0;
+}
+
+.nav-shell.is-menu-open .mobile-menu-toggle span:nth-child(3) {
+  transform: translateY(-7px) rotate(-45deg);
+}
+
 .snap-stage {
   height: 100vh;
   overflow-y: auto;
@@ -1945,18 +1985,14 @@ body.waitlist-open {
   }
 
   .nav-shell {
-    display: flex;
+    position: relative;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
     height: auto;
     min-height: 64px;
-    justify-content: flex-start;
-    gap: 16px;
-    overflow-x: auto;
+    overflow: visible;
     padding: 0 18px;
-    scrollbar-width: none;
-  }
-
-  .nav-shell::-webkit-scrollbar {
-    display: none;
+    column-gap: 12px;
   }
 
   .brand-logo {
@@ -1964,20 +2000,86 @@ body.waitlist-open {
     min-width: 118px;
   }
 
+  .mobile-menu-toggle {
+    display: inline-flex;
+    justify-self: end;
+    grid-column: 3;
+  }
+
   .nav-links {
-    gap: 18px;
-    justify-self: start;
-    min-width: max-content;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(100% + 10px);
+    z-index: 2;
+    display: grid;
+    min-width: 0;
+    gap: 4px;
+    padding: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.72);
+    border-radius: 28px;
+    background: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 22px 46px rgba(0, 0, 0, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.82);
+    backdrop-filter: blur(22px);
+    opacity: 0;
+    pointer-events: none;
+    transform: translate3d(0, -10px, 0) scale(0.985);
+    transition: opacity 240ms ease, transform 240ms ease;
+  }
+
+  .site-header[data-theme="dark"] .nav-links {
+    border-color: rgba(255, 255, 255, 0.2);
+    background: rgba(40, 45, 50, 0.9);
+  }
+
+  .nav-shell.is-menu-open .nav-links {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate3d(0, 0, 0) scale(1);
   }
 
   .nav-link {
     font-size: 14px;
+    padding: 13px 14px;
+    border-radius: 16px;
+  }
+
+  .nav-link.is-active {
+    background: rgba(0, 0, 0, 0.06);
+  }
+
+  .site-header[data-theme="dark"] .nav-link.is-active {
+    background: rgba(255, 255, 255, 0.13);
   }
 
   .social-links {
-    gap: 14px;
-    margin-left: 4px;
+    position: absolute;
+    top: calc(100% + 236px);
+    right: 14px;
+    z-index: 3;
+    gap: 18px;
+    margin-left: 0;
+    padding: 10px 14px;
+    border: 1px solid rgba(255, 255, 255, 0.7);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.86);
+    box-shadow: 0 16px 30px rgba(0, 0, 0, 0.1);
+    backdrop-filter: blur(18px);
     font-size: 19px;
+    opacity: 0;
+    pointer-events: none;
+    transform: translate3d(0, -8px, 0);
+    transition: opacity 240ms ease, transform 240ms ease;
+  }
+
+  .site-header[data-theme="dark"] .social-links {
+    background: rgba(40, 45, 50, 0.88);
+  }
+
+  .nav-shell.is-menu-open .social-links {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translate3d(0, 0, 0);
   }
 
   .footer-inner {
@@ -2051,6 +2153,8 @@ body.waitlist-open {
 
   .home-carousel {
     margin-top: 46px;
+    touch-action: pan-y;
+    user-select: none;
   }
 
   .home-slide {
@@ -2064,7 +2168,19 @@ body.waitlist-open {
   }
 
   .carousel-button {
-    display: none;
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    font-size: 26px;
+  }
+
+  .carousel-button.previous {
+    left: 16px;
+  }
+
+  .carousel-button.next {
+    right: 16px;
   }
 
   .analytics-overlay {
@@ -2091,19 +2207,23 @@ body.waitlist-open {
 
   .orb-screen {
     height: 100svh;
-    padding-top: 76px;
+    padding-top: 80px;
   }
 
   .ai-avatar-stage {
-    height: calc(100svh - 76px);
+    height: calc(100svh - 80px);
   }
 
   .ai-avatar-orb {
-    width: min(620px, 105vw);
+    top: 50%;
+    width: min(660px, 112vw);
   }
 
   .floating-bubbles {
-    width: min(980px, 152vw);
+    top: 50%;
+    width: min(920px, 154vw);
+    mask-image: radial-gradient(circle at center, #000 0 34%, rgba(0, 0, 0, 0.66) 48%, rgba(0, 0, 0, 0.22) 62%, rgba(0, 0, 0, 0.05) 75%, transparent 88%);
+    -webkit-mask-image: radial-gradient(circle at center, #000 0 34%, rgba(0, 0, 0, 0.66) 48%, rgba(0, 0, 0, 0.22) 62%, rgba(0, 0, 0, 0.05) 75%, transparent 88%);
   }
 
   .ai-avatar-stage .banner {
@@ -2115,6 +2235,7 @@ body.waitlist-open {
 
   .ai-avatar-stage .banner h2 {
     font-size: clamp(34px, 8.4vw, 48px);
+    white-space: nowrap;
   }
 
   .ai-avatar-stage .banner p {
@@ -2318,11 +2439,14 @@ body.waitlist-open {
   }
 
   .nav-links {
-    gap: 16px;
+    top: calc(100% + 8px);
+    gap: 4px;
   }
 
   .social-links {
-    display: none;
+    top: calc(100% + 228px);
+    right: 10px;
+    display: flex;
   }
 
   .screen {
@@ -2352,11 +2476,24 @@ body.waitlist-open {
   }
 
   .ai-avatar-stage .banner h2 {
-    font-size: clamp(28px, 7.8vw, 38px);
+    font-size: clamp(26px, 7vw, 34px);
+    white-space: nowrap;
   }
 
   .ai-avatar-stage .banner {
-    width: 92vw;
+    top: 45%;
+    width: 94vw;
+    padding: 20px 16px;
+  }
+
+  .ai-avatar-orb {
+    width: min(560px, 126vw);
+  }
+
+  .floating-bubbles {
+    width: min(780px, 178vw);
+    mask-image: radial-gradient(circle at center, #000 0 30%, rgba(0, 0, 0, 0.52) 44%, rgba(0, 0, 0, 0.14) 58%, transparent 76%);
+    -webkit-mask-image: radial-gradient(circle at center, #000 0 30%, rgba(0, 0, 0, 0.52) 44%, rgba(0, 0, 0, 0.14) 58%, transparent 76%);
   }
 
   .adaptive-media .ai-card {

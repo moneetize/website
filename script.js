@@ -1,5 +1,7 @@
 const stage = document.querySelector(".snap-stage");
 const header = document.querySelector(".site-header");
+const navShell = document.querySelector(".nav-shell");
+const mobileMenuToggle = document.querySelector(".mobile-menu-toggle");
 const navLinks = [...document.querySelectorAll(".nav-link")];
 const screens = [...document.querySelectorAll(".screen")];
 const carousel = document.querySelector(".home-carousel");
@@ -11,6 +13,9 @@ const waitlistTriggers = [...document.querySelectorAll(".waitlist-trigger")];
 const waitlistClosers = [...document.querySelectorAll("[data-waitlist-close]")];
 let activeSlide = 1;
 let scrollFrame = 0;
+let carouselPointerId = null;
+let carouselStartX = 0;
+let carouselDeltaX = 0;
 
 const observer = new IntersectionObserver(
   (entries) => {
@@ -64,6 +69,12 @@ function setActiveSlide(index) {
   updateHomeCarousel();
 }
 
+function setMobileMenuOpen(isOpen) {
+  if (!navShell || !mobileMenuToggle) return;
+  navShell.classList.toggle("is-menu-open", isOpen);
+  mobileMenuToggle.setAttribute("aria-expanded", String(isOpen));
+}
+
 function updateScrollEffects() {
   const viewport = stage.clientHeight;
 
@@ -96,6 +107,44 @@ carouselDots.forEach((dot, index) => {
   dot.addEventListener("click", () => setActiveSlide(index));
 });
 
+carousel?.addEventListener("pointerdown", (event) => {
+  carouselPointerId = event.pointerId;
+  carouselStartX = event.clientX;
+  carouselDeltaX = 0;
+  carousel.classList.add("is-dragging");
+  carousel.setPointerCapture?.(event.pointerId);
+});
+
+carousel?.addEventListener("pointermove", (event) => {
+  if (carouselPointerId !== event.pointerId) return;
+  carouselDeltaX = event.clientX - carouselStartX;
+});
+
+function finishCarouselSwipe(event) {
+  if (carouselPointerId !== event.pointerId) return;
+
+  if (Math.abs(carouselDeltaX) > 44) {
+    setActiveSlide(activeSlide + (carouselDeltaX < 0 ? 1 : -1));
+  }
+
+  carouselPointerId = null;
+  carouselDeltaX = 0;
+  carousel.classList.remove("is-dragging");
+}
+
+carousel?.addEventListener("pointerup", finishCarouselSwipe);
+carousel?.addEventListener("pointercancel", finishCarouselSwipe);
+
+mobileMenuToggle?.addEventListener("click", () => {
+  setMobileMenuOpen(!navShell?.classList.contains("is-menu-open"));
+});
+
+document.addEventListener("click", (event) => {
+  if (!navShell?.classList.contains("is-menu-open")) return;
+  if (navShell.contains(event.target)) return;
+  setMobileMenuOpen(false);
+});
+
 stage.addEventListener("scroll", requestScrollEffects, { passive: true });
 window.addEventListener("resize", updateHomeCarousel);
 
@@ -107,6 +156,7 @@ navLinks.forEach((link) => {
     const target = document.getElementById(link.dataset.target);
     if (!target) return;
     event.preventDefault();
+    setMobileMenuOpen(false);
     target.scrollIntoView({ behavior: "smooth", block: "start" });
   });
 });
@@ -137,7 +187,10 @@ waitlistClosers.forEach((closer) => {
 });
 
 document.addEventListener("keydown", (event) => {
-  if (event.key === "Escape") closeWaitlist();
+  if (event.key === "Escape") {
+    closeWaitlist();
+    setMobileMenuOpen(false);
+  }
 });
 
 window.addEventListener("load", () => {
