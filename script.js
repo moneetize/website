@@ -16,6 +16,7 @@ let scrollFrame = 0;
 let carouselPointerId = null;
 let carouselStartX = 0;
 let carouselDeltaX = 0;
+let carouselScrollFrame = 0;
 
 const observer = new IntersectionObserver(
   (entries) => {
@@ -48,7 +49,23 @@ function clamp(value, min, max) {
 function updateHomeCarousel() {
   if (!carousel || !carouselTrack || !carouselSlides.length) return;
 
+  const isMobileCarousel = window.matchMedia("(max-width: 900px)").matches;
   const slideWidth = carouselSlides[0].getBoundingClientRect().width;
+
+  if (isMobileCarousel) {
+    carouselTrack.style.transform = "";
+
+    carouselSlides.forEach((slide, index) => {
+      slide.classList.toggle("is-active", index === activeSlide);
+    });
+
+    carouselDots.forEach((dot, index) => {
+      dot.classList.toggle("active", index === activeSlide);
+    });
+
+    return;
+  }
+
   const gap = parseFloat(getComputedStyle(carouselTrack).columnGap) || 24;
   const leftInset = Math.min(24, Math.max(0, (window.innerWidth - slideWidth) / 2));
   const offset = leftInset - activeSlide * (slideWidth + gap);
@@ -66,7 +83,50 @@ function updateHomeCarousel() {
 
 function setActiveSlide(index) {
   activeSlide = (index + carouselSlides.length) % carouselSlides.length;
+
+  if (carousel && window.matchMedia("(max-width: 900px)").matches) {
+    carouselSlides[activeSlide]?.scrollIntoView({
+      behavior: "smooth",
+      block: "nearest",
+      inline: "center",
+    });
+  }
+
   updateHomeCarousel();
+}
+
+function updateMobileCarouselFromScroll() {
+  if (!carousel || !carouselSlides.length || !window.matchMedia("(max-width: 900px)").matches) {
+    carouselScrollFrame = 0;
+    return;
+  }
+
+  const carouselCenter = carousel.getBoundingClientRect().left + carousel.clientWidth / 2;
+  let closestIndex = activeSlide;
+  let closestDistance = Number.POSITIVE_INFINITY;
+
+  carouselSlides.forEach((slide, index) => {
+    const box = slide.getBoundingClientRect();
+    const slideCenter = box.left + box.width / 2;
+    const distance = Math.abs(slideCenter - carouselCenter);
+
+    if (distance < closestDistance) {
+      closestDistance = distance;
+      closestIndex = index;
+    }
+  });
+
+  if (closestIndex !== activeSlide) {
+    activeSlide = closestIndex;
+  }
+
+  updateHomeCarousel();
+  carouselScrollFrame = 0;
+}
+
+function requestMobileCarouselUpdate() {
+  if (carouselScrollFrame) return;
+  carouselScrollFrame = requestAnimationFrame(updateMobileCarouselFromScroll);
 }
 
 function setMobileMenuOpen(isOpen) {
@@ -108,6 +168,7 @@ carouselDots.forEach((dot, index) => {
 });
 
 carousel?.addEventListener("pointerdown", (event) => {
+  if (window.matchMedia("(max-width: 900px)").matches) return;
   carouselPointerId = event.pointerId;
   carouselStartX = event.clientX;
   carouselDeltaX = 0;
@@ -116,11 +177,13 @@ carousel?.addEventListener("pointerdown", (event) => {
 });
 
 carousel?.addEventListener("pointermove", (event) => {
+  if (window.matchMedia("(max-width: 900px)").matches) return;
   if (carouselPointerId !== event.pointerId) return;
   carouselDeltaX = event.clientX - carouselStartX;
 });
 
 function finishCarouselSwipe(event) {
+  if (window.matchMedia("(max-width: 900px)").matches) return;
   if (carouselPointerId !== event.pointerId) return;
 
   if (Math.abs(carouselDeltaX) > 44) {
@@ -134,6 +197,7 @@ function finishCarouselSwipe(event) {
 
 carousel?.addEventListener("pointerup", finishCarouselSwipe);
 carousel?.addEventListener("pointercancel", finishCarouselSwipe);
+carousel?.addEventListener("scroll", requestMobileCarouselUpdate, { passive: true });
 
 mobileMenuToggle?.addEventListener("click", () => {
   setMobileMenuOpen(!navShell?.classList.contains("is-menu-open"));
@@ -204,5 +268,6 @@ window.addEventListener("load", () => {
     }
 
     updateScrollEffects();
+    setActiveSlide(activeSlide);
   });
 });
